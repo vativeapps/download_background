@@ -1,23 +1,38 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:download_background/event_bus.dart';
 import 'package:download_background/main.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import 'files_model.dart';
+
 class AppService {
   static AppService? _instance;
 
   static AppService get getInstance => _instance ?? AppService();
   late Dio _dio;
-  static Queue<Map>? _downloadQueueMap;
+  static Queue<FileModel>? _downloadQueueMap;
 
-  static Queue<Map> get getDownloadQueueMap => _downloadQueueMap ??= Queue();
+  static Queue<FileModel> get getDownloadQueueMap =>
+      _downloadQueueMap ??= Queue();
 
   AppService() {
     _dio = Dio();
+  }
+
+  addToQueue(FileModel fileModel) {
+    AppService.getDownloadQueueMap.add(fileModel);
+    eventBus.fire(AddedToQueue(fileModel));
+
+    eventBus.on<Downloading>().listen((event) {});
+  }
+
+  onStartDownloading() {
+    eventBus.on<AddedToQueue>().listen((event) {});
   }
 
   void addDownload(int id, String url, String pathToSave) {
